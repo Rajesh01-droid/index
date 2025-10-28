@@ -1,164 +1,287 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>AI Smart Outlier Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<style>
-body {
-    font-family: 'Segoe UI', sans-serif;
-    background: #f9fafb;
-    margin: 20px;
-    color: #111827;
-}
-.card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    padding: 20px;
-    margin-bottom: 20px;
-}
-h1 { color: #2563eb; margin:0; font-weight:700; }
-button, select, input[type="file"] {
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    padding: 8px 12px;
-    margin-right: 10px;
-    font-size:14px;
-}
-button {
-    background: #2563eb;
-    color:white;
-    border:none;
-    cursor:pointer;
-    transition:0.2s;
-}
-button:hover:not(:disabled){ background:#1e40af; }
-button:disabled { background: #9ca3af; cursor:not-allowed; }
-.kpi-container { display:flex; flex-wrap:wrap; gap:20px; }
-.kpi-card { flex:1; min-width:200px; background:#eff6ff; border-left:5px solid #2563eb; padding:15px; border-radius:10px; cursor:default; }
-.kpi-card h3 { margin:0; font-size:1.1em; color:#1e40af; }
-.kpi-card p { margin:5px 0 0 0; font-size:1.5em; font-weight:bold; }
-.kpi-clickable { cursor:pointer; }
-.kpi-clickable:hover { box-shadow:0 6px 18px rgba(37,99,235,0.12); transform:translateY(-3px); transition:all 0.15s ease; }
-table.dataTable tbody td.outlier { background: #fecaca !important; color:#7f1d1d; font-weight:bold; }
-#chartContainer { position: relative; height:420px; }
-/* Modal */
-.modal-backdrop {
-    position: fixed;
-    inset:0;
-    background: rgba(0,0,0,0.45);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:2000;
-}
-.modal { width:90%; max-width:1000px; background:white; border-radius:10px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,0.3); max-height:85vh; overflow:auto; }
-.modal .modal-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
-.modal .modal-title { font-weight:700; color:#111827; max-width:100%; word-break:break-word; }
-.modal .modal-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:5px; }
-.modal-close { background:#ef4444; border:none; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; }
-.badge { display:inline-block; padding:4px 8px; border-radius:6px; background:#fef3c7; color:#92400e; font-weight:700; font-size:12px; }
-#status { margin:0; color:#4b5563; font-weight:500; font-size:14px; }
-
-/* Responsive fixes */
-.header-info {
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    gap:8px;
-    justify-content:flex-start;
-}
-.header-info span { flex-shrink:1; min-width:0; }
-.header-info img { flex-shrink:0; max-width:100%; height:auto; }
-
-.file-buttons-container {
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    align-items:center;
-}
-.file-buttons-container input[type="file"] { flex:1 1 150px; min-width:120px; }
-.file-buttons-container button, .file-buttons-container select { flex-shrink:0; min-width:120px; }
-
-/* Modal Table Scroll */
-#modalTableArea { overflow-x:auto; }
-
-/* Media Queries */
-@media(max-width:640px){
-    .kpi-card{min-width:140px;}
-    .modal{width:96%;}
-    .header-info { flex-direction:column; align-items:flex-start; gap:4px; }
-    .file-buttons-container { flex-direction:column; align-items:stretch; }
-    .file-buttons-container button, .file-buttons-container select, .file-buttons-container input[type="file"] { width:100%; margin-right:0; }
-}
-</style>
+    <meta charset="UTF-8">
+    <title>AI Smart Outlier Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Libraries -->
+    <script src="https:                                                             
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https:                                          
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https:                                                                            
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f9fafb;
+            margin: 20px;
+            color: #111827;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        /* Responsive Design */
+        @media(max-width:640px){
+            .kpi-card{
+                min-width:140px;
+            }
+            .modal{
+                width:96%;
+            }
+            .header-info {
+                flex-direction:column;
+                align-items:flex-start;
+            }
+            .header-info img {
+                margin-top:4px;
+            }
+            .file-buttons-container {
+                flex-direction:column;
+                align-items:stretch;
+            }
+            .file-buttons-container button, 
+            .file-buttons-container select, 
+            .file-buttons-container input[type="file"] {
+                width:100%;
+                margin-right:0;
+            }
+        }
+        
+        /* Rest of your CSS remains the same */
+        h1 {
+            color: #2563eb;
+            margin:0;
+            font-weight:700;
+        }
+        
+        button, select, input[type="file"] {
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            margin-right: 10px;
+            font-size:14px;
+        }
+        
+        button {
+            background: #2563eb;
+            color:white;
+            border:none;
+            cursor:pointer;
+            transition:00.2s;
+        }
+        
+        button:hover:not(:disabled){
+            background:#1e40af;
+        }
+        
+        button:disabled {
+            background: #9ca3af;
+            cursor:not-allowed;
+        }
+        
+        .kpi-container {
+            display:flex;
+            flex-wrap:wrap;
+            gap:20px;
+        }
+        
+        .kpi-card {
+            flex:1;
+            min-width:200px;
+            background:#eff6ff;
+            border-left:5px solid #2563eb;
+            padding:15px;
+            border-radius:10px;
+            cursor:default;
+        }
+        
+        .kpi-card h3 {
+            margin:0;
+            font-size:1.1em;
+            color:#1e40af;
+        }
+        
+        .kpi-card p {
+            margin:5px 0 0 0;
+            font-size:1.5em;
+            font-weight:bold;
+        }
+        
+        .kpi-clickable {
+            cursor:pointer;
+        }
+        
+        .kpi-clickable:hover {
+            box-shadow:0 6px 18px rgba(37,99,235,0.12);
+            transform:translateY(-3px);
+            transition:all 0.15s ease;
+        }
+        
+        table.dataTable tbody td.outlier {
+            background: #fecaca !important;
+            color:#7f1d1d;
+            font-weight:bold;
+        }
+        
+        #chartContainer {
+            position: relative;
+            height:420px;
+        }
+        
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset:0;
+            background: rgba(0,0,0,0.45);
+            display:none;
+            align-items:center;
+            justify-content:center;
+            z-index:2000;
+        }
+        
+        .modal {
+            width:90%;
+            max-width:1000px;
+            background:white;
+            border-radius:10px;
+            padding:16px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.3);
+            max-height:85vh;
+            overflow:auto;
+        }
+        
+        .modal .modal-header {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            margin-bottom:10px;
+            flex-wrap:wrap;
+        }
+        
+        .modal .modal-title {
+            font-weight:700;
+            color:#111827;
+        }
+        
+        .modal .modal-actions {
+            display:flex;
+            gap:8px;
+            align-items:center;
+            flex-wrap:wrap;
+            margin-top:5px;
+        }
+        
+        .modal-close {
+            background:#ef4444;
+            border:none;
+            color:white;
+            padding:6px 10px;
+            border-radius:6px;
+            cursor:pointer;
+        }
+        
+        .badge {
+            display:inline-block;
+            padding:4px 8px;
+            border-radius:6px;
+            background:#fef3c7;
+            color:#92400e;
+            font-weight:700;
+            font-size:12px;
+        }
+        
+        #status {
+            margin:0;
+            color:#4b5563;
+            font-weight:500;
+            font-size:14px;
+        }
+        
+        /* Additional Responsive Fixes */
+        .header-info {
+            display:flex;
+            flex-wrap:wrap;
+            align-items:center;
+            gap:8px;
+            justify-content:flex-start;
+        }
+        
+        .header-info span, .header-info img {
+            flex-shrink:0;
+        }
+        
+        .file-buttons-container {
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+            align-items:center;
+        }
+        
+        .file-buttons-container input[type="file"] {
+            flex:1;
+            min-width:150px;
+        }
+        
+        .file-buttons-container button, .file-buttons-container select {
+            flex-shrink:0;
+        }
+    </style>
 </head>
 <body>
-<!-- Dashboard Header -->
-<div class="card" style="display:flex; flex-direction:column; gap:16px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-        <h1 style="font-size:1.7em;">🤖 Smart Outlier Detection Dashboard (with Health Facility)</h1>
-        <div class="header-info" style="background:#f3f4f6; padding:10px 16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.12); font-size:14px; white-space:normal;">
-            <span style="font-weight:600; color:#1f2937;">District Office Malir PPHI SINDH</span>
-            <span style="font-weight:600; color:#2563eb;">| Developed by IT-DPAs, DO Malir</span>
-            <img src="https://pphisindh.org/home/img/blue/logo-wide.png" alt="PPHI Sindh Logo" style="height:32px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
-        </div>
-    </div>
-    <div class="file-buttons-container">
-        <input type="file" id="fileInput" accept=".xlsx,.xls">
-        <button id="detectBtn" disabled>Detect Outliers</button>
-        <select id="columnSelect" style="display:none;"></select>
-        <button id="exportBtn" disabled>Export Excel (Selected Indicator)</button>
-    </div>
-    <p id="status">Upload a file to begin.</p>
-</div>
-
-<!-- KPIs -->
-<div class="card">
-    <div class="kpi-container" id="kpiContainer"></div>
-</div>
-
-<!-- Chart -->
-<div class="card">
-    <div id="chartContainer"><canvas id="outlierChart"></canvas></div>
-</div>
-
-<!-- Table -->
-<div class="card">
-    <div id="tableContainer"></div>
-</div>
-
-<!-- Modal -->
-<div id="outlierModalBackdrop" class="modal-backdrop" role="dialog" aria-hidden="true">
-    <div class="modal" role="document">
-        <div class="modal-header">
-            <div>
-                <div class="modal-title" id="modalTitle">Outliers — <span id="modalIndicatorName"></span></div>
-                <div id="modalSubtitle" style="font-size:12px;color:#6b7280;margin-top:4px;"></div>
-            </div>
-            <div class="modal-actions">
-                <button id="downloadOutliersBtn">📥 Download Outliers Only</button>
-                <button id="closeModalBtn" class="modal-close">Close</button>
+    <!-- Dashboard Header -->
+    <div class="card" style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <h1 style="font-size:1.7em;">🤖 Smart Outlier Detection Dashboard (with Health Facility)</h1>
+            <div class="header-info" style="background:                                                                                                                            
+                <span style="font-weight:600; color:#1f2937;">District Office Malir PPHI SINDH</span>
+                <span style="font-weight:600; color:                                                 
+                <img src="https://pphisindh.org/home/img/blue/logo-wide.png" alt="PPHI Sindh Logo" style="height:32px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
             </div>
         </div>
-        <div id="modalTableArea">
-            <table id="outliersOnlyTable" class="display" style="width:100%"></table>
+        
+        <div class="file-buttons-container">
+            <input type="file" id="fileInput" accept=".xlsx,.xls">
+            <button id="detectBtn" disabled>Detect Outliers</button>
+            <select id="columnSelect" style="display:none;"></select>
+            <button id="exportBtn" disabled>Export Excel (Selected Indicator)</button>
         </div>
+        <p id="status">Upload a file to begin.</p>
     </div>
-</div>
-
-<script>
-// ====== JS Logic ======
-// Paste your full JS code here (the original code you sent)
-</script>
-</body>
-</html>
+    
+    <!-- KPIs -->
+    <div class="card">
+        <div class="kpi-container" id="kpiContainer"></div>
+    </div>
+    
+    <!-- Chart -->
+    <div class="card">
+        <div id="chartContainer"><canvas id="outlierChart"></canvas></div>
+    </div>
+    
+    <!-- Table -->
+    <div class="card">
+        <div id="tableContainer"></div>
+    </div>
+    
+    <!-- Modal -->
+    <div id="outlierModalBackdrop" class="modal-backdrop" role="dialog" aria-hidden="true">
+        <div class="modal" role="document">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title" id="modalTitle">Outliers — <span id="modalIndicatorName"></span></div>
+                    <div id="modalSubtitle" style="font-size:12px;color:                               
+                </div>
+                <div class="modal-actions">
+                    <button id="downloadOutliersBtn">📥 Download Outliers Only</button>
+                    <button id="closeModalBtn" class="modal-close">Close</button>
