@@ -1,248 +1,262 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>AI Smart Outlier Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<!-- Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
-<style>
-/* ===== Global ===== */
-body { font-family: 'Segoe UI', sans-serif; background: #f9fafb; margin: 0; color: #111827; }
-.card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 20px; margin: 20px auto; max-width:1200px; }
-h1 { color: #2563eb; margin:0; font-weight:700; font-size:1.8em; }
-button, select, input[type="file"] { border-radius: 6px; border: 1px solid #ccc; padding: 8px 12px; margin-right: 10px; font-size:14px; }
-button { background: #2563eb; color:white; border:none; cursor:pointer; transition:0.2s; }
-button:hover:not(:disabled){ background:#1e40af; }
-button:disabled { background: #9ca3af; cursor:not-allowed; }
-.kpi-container { display:flex; flex-wrap:wrap; gap:20px; justify-content:flex-start; }
-.kpi-card { flex:1; min-width:180px; background:#eff6ff; border-left:5px solid #2563eb; padding:15px; border-radius:10px; cursor:default; transition:all 0.2s ease; }
-.kpi-card:hover { box-shadow:0 6px 18px rgba(37,99,235,0.12); transform:translateY(-3px); }
-.kpi-card h3 { margin:0; font-size:1em; color:#1e40af; }
-.kpi-card p { margin:5px 0 0 0; font-size:1.4em; font-weight:bold; }
-table.dataTable tbody td.outlier { background: #fecaca !important; color:#7f1d1d; font-weight:bold; }
-#chartContainer { position: relative; height:420px; width:100%; }
-
-/* Modal */
-.modal-backdrop { position: fixed; inset:0; background: rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:2000; padding:10px; overflow:auto; }
-.modal { width:100%; max-width:1000px; background:white; border-radius:10px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,0.3); max-height:90vh; overflow:auto; }
-.modal .modal-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
-.modal .modal-title { font-weight:700; color:#111827; font-size:1.2em; }
-.modal .modal-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:5px; }
-.modal-close { background:#ef4444; border:none; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; }
-.badge { display:inline-block; padding:4px 8px; border-radius:6px; background:#fef3c7; color:#92400e; font-weight:700; font-size:12px; }
-#status { margin:0; color:#4b5563; font-weight:500; font-size:14px; }
-
-/* ===== Header Flex ===== */
-.header-top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
-.header-info { display:flex; align-items:center; gap:12px; background:#f3f4f6; padding:10px 16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.12); font-size:14px; flex-wrap:wrap; }
-
-/* ===== File Input Row ===== */
-.file-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:flex-start; margin-top:10px; }
-.file-row input[type=file] { flex:1; min-width:160px; }
-.file-row button, .file-row select { flex:none; }
-
-/* ===== Responsive ===== */
-@media(max-width:1024px){ .kpi-card{min-width:150px;} }
-@media(max-width:768px){
-  h1 { font-size:1.5em; }
-  .kpi-card{min-width:120px; font-size:14px;}
-  #chartContainer{height:300px;}
-}
-@media(max-width:480px){
-  .header-top{flex-direction:column; align-items:flex-start;}
-  .header-info{flex-direction:column; align-items:flex-start;}
-  .file-row{flex-direction:column; align-items:flex-start;}
-  .file-row input, .file-row select, .file-row button { width:100%; margin-right:0; }
-  .kpi-container{flex-direction:column; gap:12px;}
-  #chartContainer{height:250px;}
-  h1{font-size:1.3em;}
-  .modal{padding:10px;}
-}
-</style>
-</head>
-
-<body>
-
-<!-- Dashboard Header -->
-<div class="card">
-
-  <div class="header-top">
-    <h1>🤖 Smart Outlier Detection Dashboard (with Health Facility)</h1>
-    <div class="header-info">
-      <span style="font-weight:600; color:#1f2937;">District Office Malir PPHI SINDH</span>
-      <span style="font-weight:600; color:#2563eb;">| Developed by IT-DPAs, DO Malir</span>
-      <img src="https://pphisindh.org/home/img/blue/logo-wide.png" alt="PPHI Sindh Logo" style="height:32px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
-    </div>
-  </div>
-
-  <div class="file-row">
-    <input type="file" id="fileInput" accept=".xlsx,.xls">
-    <button id="detectBtn" disabled>Detect Outliers</button>
-    <select id="columnSelect" style="display:none;"></select>
-    <button id="exportBtn" disabled>Export Excel (Selected Indicator)</button>
-  </div>
-
-  <p id="status">Upload a file to begin.</p>
-</div>
-
-<!-- KPIs -->
-<div class="card">
-  <div class="kpi-container" id="kpiContainer"></div>
-</div>
-
-<!-- Chart -->
-<div class="card">
-  <div id="chartContainer"><canvas id="outlierChart"></canvas></div>
-</div>
-
-<!-- Table -->
-<div class="card">
-  <div id="tableContainer"></div>
-</div>
-
-<!-- Modal -->
-<div id="outlierModalBackdrop" class="modal-backdrop" role="dialog" aria-hidden="true">
-  <div class="modal" role="document">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="modalTitle">Outliers — <span id="modalIndicatorName"></span></div>
-        <div id="modalSubtitle" style="font-size:12px;color:#6b7280;margin-top:4px;"></div>
-      </div>
-      <div class="modal-actions">
-        <button id="downloadOutliersBtn">📥 Download Outliers Only</button>
-        <button id="closeModalBtn" class="modal-close">Close</button>
-      </div>
-    </div>
-    <div id="modalTableArea">
-      <table id="outliersOnlyTable" class="display" style="width:100%"></table>
-    </div>
-  </div>
-</div>
-
-<script>
-// ====== JS Logic ======
-// (JS code remains exactly same as your original code)
-let data=[], headers=[], outliers={}, numericCols=[];
-let hfCol=null, monthCol=null;
-let chart=null, currentSelectedIndicator=null;
-
-const fileInput = document.getElementById('fileInput');
-const detectBtn = document.getElementById('detectBtn');
-const exportBtn = document.getElementById('exportBtn');
-const columnSelect = document.getElementById('columnSelect');
-const statusEl = document.getElementById('status');
-const kpiContainer = document.getElementById('kpiContainer');
-
-const outlierModalBackdrop = document.getElementById('outlierModalBackdrop');
-const modalIndicatorName = document.getElementById('modalIndicatorName');
-const modalSubtitle = document.getElementById('modalSubtitle');
-const downloadOutliersBtn = document.getElementById('downloadOutliersBtn');
-const closeModalBtn = document.getElementById('closeModalBtn');
-
-// ===== File Upload =====
-fileInput.addEventListener('change', async (e)=>{
-  const f=e.target.files[0];
-  if(!f) return;
-  const buf = await f.arrayBuffer();
-  const wb = XLSX.read(buf,{type:'array'});
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  data=XLSX.utils.sheet_to_json(ws,{defval:null});
-  headers=Object.keys(data[0]||{});
-  hfCol=headers.find(h=>/(?:health|facility|hf|hf_name|facility_name)/i.test(h))||null;
-  monthCol=headers.find(h=>/month|date|period/i.test(h))||null;
-  detectBtn.disabled=false;
-  statusEl.textContent=`${f.name} loaded — ${data.length} rows.`;
-  columnSelect.style.display='none';
-  exportBtn.disabled=true;
-  kpiContainer.innerHTML='';
-  document.getElementById('tableContainer').innerHTML='<div class="muted">Click "Detect Outliers" to analyze.</div>';
-  if(chart){ chart.destroy(); chart=null; }
-});
-
-// ===== Detect Outliers =====
-// (Rest of your JS remains unchanged)
-detectBtn.addEventListener('click',()=>{
-  numericCols=headers.filter(h=>data.some(r=>!isNaN(parseFloat(r[h]))&&r[h]!==null));
-  outliers={};
-  numericCols.forEach(col=>{
-    const nums=data.map(r=>parseFloat(r[col])).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
-    if(nums.length<4) return;
-    const q1=quantile(nums,0.25), q3=quantile(nums,0.75);
-    const iqr=q3-q1;
-    const mean=nums.reduce((a,b)=>a+b,0)/nums.length;
-    const sd=Math.sqrt(nums.reduce((a,b)=>a+(b-mean)**2,0)/nums.length);
-    const low=Math.min(q1-1.5*iqr, mean-3*sd);
-    const high=Math.max(q3+1.5*iqr, mean+3*sd);
-    data.forEach((r,i)=>{
-      const v=parseFloat(r[col]);
-      if(!isNaN(v)&&(v<low||v>high)){
-        if(!outliers[i]) outliers[i]={};
-        outliers[i][col]=true;
-      }
-    });
-  });
-
-  columnSelect.innerHTML=numericCols.map(c=>`<option value="${c}">${c}</option>`).join('');
-  columnSelect.style.display=numericCols.length?'inline-block':'none';
-  columnSelect.onchange=()=>{ currentSelectedIndicator=columnSelect.value; updateDashboard(); };
-  currentSelectedIndicator=columnSelect.value||numericCols[0]||null;
-
-  updateDashboard();
-  exportBtn.disabled=false;
-  statusEl.textContent='Outliers detected using AI-hybrid method.';
-});
-
-// ===== Dashboard Updates =====
-function updateDashboard(){
-  if(!currentSelectedIndicator) currentSelectedIndicator=numericCols[0]||null;
-  renderKPI(currentSelectedIndicator);
-  renderChart(currentSelectedIndicator);
-  renderTable(currentSelectedIndicator);
-}
-
-// ===== KPI =====
-function renderKPI(selected){
-  const total=data.length;
-  let outCount=0;
-  for(let i in outliers) if(outliers[i][selected]) outCount++;
-  const cleanPct=total?((total-outCount)/total*100).toFixed(1):'0.0';
-  kpiContainer.innerHTML=`
-    <div class="kpi-card"><h3>Indicator</h3><p style="font-size:14px">${escapeHtml(selected||'—')}</p></div>
-    <div class="kpi-card"><h3>Total Records</h3><p>${total}</p></div>
-    <div id="kpiOutCard" class="kpi-card kpi-clickable" title="Click to view only outliers"><h3>Outliers</h3><p>${outCount}</p></div>
-    <div class="kpi-card"><h3>Data Quality</h3><p>${cleanPct}% Clean</p></div>
-  `;
-  const outCard=document.getElementById('kpiOutCard');
-  if(outCard) outCard.addEventListener('click',()=>openOutliersModal(selected));
-}
-
-// ===== Chart =====
-function renderChart(selected){
-  const nums=data.map(r=>parseFloat(r[selected])).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
-  const buckets=10, labels=[], counts=Array(buckets).fill(0);
-  if(nums.length){
-    const min=nums[0], max=nums[nums.length-1], step=(max-min)/buckets||1;
-    for(let i=0;i<buckets;i++){ const lo=min+i*step, hi=lo+step; labels.push(`${Math.round(lo)}-${Math.round(hi)}`); }
-    nums.forEach(v=>{ let idx=Math.floor((v-min)/(step||1)); if(idx<0) idx=0; if(idx>=buckets) idx=buckets-1; counts[idx]++; });
-  }
-  if(chart) chart.destroy();
-  const ctx=document.getElementById('outlierChart').getContext('2d');
-  chart=new Chart(ctx,{type:'bar', data:{labels, datasets:[{label:'Count', data:counts, backgroundColor:'#60a5fa'}]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:`${selected} — Distribution (buckets)` } } }});
-}
-
-// ===== Table & Modal & Export =====
-// (Rest of JS unchanged; same as original)
-</script>
-
-</body>
-</html>
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+<meta charset="UTF-8">  
+<title>AI Smart Outlier Dashboard</title>  
+<meta name="viewport" content="width=device-width, initial-scale=1">  <!-- Libraries -->  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>  <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">  
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>  <style>  
+body { font-family: 'Segoe UI', sans-serif; background: #f9fafb; margin: 20px; color: #111827; }  
+.card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }  
+h1 { color: #2563eb; margin:0; font-weight:700; }  
+button, select, input[type="file"] { border-radius: 6px; border: 1px solid #ccc; padding: 8px 12px; margin-right: 10px; font-size:14px; }  
+button { background: #2563eb; color:white; border:none; cursor:pointer; transition:0.2s; }  
+button:hover:not(:disabled){ background:#1e40af; }  
+button:disabled { background: #9ca3af; cursor:not-allowed; }  
+.kpi-container { display:flex; flex-wrap:wrap; gap:20px; }  
+.kpi-card { flex:1; min-width:200px; background:#eff6ff; border-left:5px solid #2563eb; padding:15px; border-radius:10px; cursor:default; }  
+.kpi-card h3 { margin:0; font-size:1.1em; color:#1e40af; }  
+.kpi-card p { margin:5px 0 0 0; font-size:1.5em; font-weight:bold; }  
+.kpi-clickable { cursor:pointer; }  
+.kpi-clickable:hover { box-shadow:0 6px 18px rgba(37,99,235,0.12); transform:translateY(-3px); transition:all 0.15s ease; }  
+table.dataTable tbody td.outlier { background: #fecaca !important; color:#7f1d1d; font-weight:bold; }  
+#chartContainer { position: relative; height:420px; }  
+/* Modal */  
+.modal-backdrop { position: fixed; inset:0; background: rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:2000; }  
+.modal { width:90%; max-width:1000px; background:white; border-radius:10px; padding:16px; box-shadow:0 8px 30px rgba(0,0,0,0.3); max-height:85vh; overflow:auto; }  
+.modal .modal-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }  
+.modal .modal-title { font-weight:700; color:#111827; }  
+.modal .modal-actions { display:flex; gap:8px; align-items:center; }  
+.modal-close { background:#ef4444; border:none; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; }  
+.badge { display:inline-block; padding:4px 8px; border-radius:6px; background:#fef3c7; color:#92400e; font-weight:700; font-size:12px; }  
+#status { margin:0; color:#4b5563; font-weight:500; font-size:14px; }  
+@media(max-width:640px){ .kpi-card{min-width:140px;} .modal{width:96%;} }  
+</style>  </head>  <body>  <!-- Dashboard Header -->  <div class="card" style="display:flex; flex-direction:column; gap:16px;">    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">  
+    <h1 style="font-size:1.7em;">🤖 Smart Outlier Detection Dashboard (with Health Facility)</h1>  
+    <div style="display:flex; align-items:center; gap:12px; background:#f3f4f6; padding:10px 16px; border-radius:12px; box-shadow:0 3px 8px rgba(0,0,0,0.12); font-size:14px; white-space:nowrap;">  
+      <span style="font-weight:600; color:#1f2937;">District Office Malir PPHI SINDH</span>  
+      <span style="font-weight:600; color:#2563eb;">| Developed by IT-DPAs, DO Malir</span>  
+      <img src="https://pphisindh.org/home/img/blue/logo-wide.png" alt="PPHI Sindh Logo" style="height:32px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">  
+    </div>  
+  </div>    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:flex-start;">  
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="flex:1; min-width:220px; padding:8px 10px; border-radius:6px; border:1px solid #ccc;">  
+    <button id="detectBtn" disabled>Detect Outliers</button>  
+    <select id="columnSelect" style="display:none; padding:8px 12px; border-radius:6px; border:1px solid #ccc;"></select>  
+    <button id="exportBtn" disabled>Export Excel (Selected Indicator)</button>  
+  </div>    <p id="status">Upload a file to begin.</p>  
+</div>  <!-- KPIs -->  <div class="card">  
+  <div class="kpi-container" id="kpiContainer"></div>  
+</div>  <!-- Chart -->  <div class="card">  
+  <div id="chartContainer"><canvas id="outlierChart"></canvas></div>  
+</div>  <!-- Table -->  <div class="card">  
+  <div id="tableContainer"></div>  
+</div>  <!-- Modal -->  <div id="outlierModalBackdrop" class="modal-backdrop" role="dialog" aria-hidden="true">  
+  <div class="modal" role="document">  
+    <div class="modal-header">  
+      <div>  
+        <div class="modal-title" id="modalTitle">Outliers — <span id="modalIndicatorName"></span></div>  
+        <div id="modalSubtitle" style="font-size:12px;color:#6b7280;margin-top:4px;"></div>  
+      </div>  
+      <div class="modal-actions">  
+        <button id="downloadOutliersBtn">📥 Download Outliers Only</button>  
+        <button id="closeModalBtn" class="modal-close">Close</button>  
+      </div>  
+    </div>  
+    <div id="modalTableArea">  
+      <table id="outliersOnlyTable" class="display" style="width:100%"></table>  
+    </div>  
+  </div>  
+</div>  <script>  
+// ====== JS Logic ======  
+let data=[], headers=[], outliers={}, numericCols=[];  
+let hfCol=null, monthCol=null;  
+let chart=null, currentSelectedIndicator=null;  
+  
+const fileInput = document.getElementById('fileInput');  
+const detectBtn = document.getElementById('detectBtn');  
+const exportBtn = document.getElementById('exportBtn');  
+const columnSelect = document.getElementById('columnSelect');  
+const statusEl = document.getElementById('status');  
+const kpiContainer = document.getElementById('kpiContainer');  
+  
+const outlierModalBackdrop = document.getElementById('outlierModalBackdrop');  
+const modalIndicatorName = document.getElementById('modalIndicatorName');  
+const modalSubtitle = document.getElementById('modalSubtitle');  
+const downloadOutliersBtn = document.getElementById('downloadOutliersBtn');  
+const closeModalBtn = document.getElementById('closeModalBtn');  
+  
+// ===== File Upload =====  
+fileInput.addEventListener('change', async (e)=>{  
+  const f=e.target.files[0];  
+  if(!f) return;  
+  const buf = await f.arrayBuffer();  
+  const wb = XLSX.read(buf,{type:'array'});  
+  const ws = wb.Sheets[wb.SheetNames[0]];  
+  data=XLSX.utils.sheet_to_json(ws,{defval:null});  
+  headers=Object.keys(data[0]||{});  
+  hfCol=headers.find(h=>/(?:health|facility|hf|hf_name|facility_name)/i.test(h))||null;  
+  monthCol=headers.find(h=>/month|date|period/i.test(h))||null;  
+  detectBtn.disabled=false;  
+  statusEl.textContent=`${f.name} loaded — ${data.length} rows.`;  
+  columnSelect.style.display='none';  
+  exportBtn.disabled=true;  
+  kpiContainer.innerHTML='';  
+  document.getElementById('tableContainer').innerHTML='<div class="muted">Click "Detect Outliers" to analyze.</div>';  
+  if(chart){ chart.destroy(); chart=null; }  
+});  
+  
+// ===== Detect Outliers =====  
+detectBtn.addEventListener('click',()=>{  
+  numericCols=headers.filter(h=>data.some(r=>!isNaN(parseFloat(r[h]))&&r[h]!==null));  
+  outliers={};  
+  numericCols.forEach(col=>{  
+    const nums=data.map(r=>parseFloat(r[col])).filter(v=>!isNaN(v)).sort((a,b)=>a-b);  
+    if(nums.length<4) return;  
+    const q1=quantile(nums,0.25), q3=quantile(nums,0.75);  
+    const iqr=q3-q1;  
+    const mean=nums.reduce((a,b)=>a+b,0)/nums.length;  
+    const sd=Math.sqrt(nums.reduce((a,b)=>a+(b-mean)**2,0)/nums.length);  
+    const low=Math.min(q1-1.5*iqr, mean-3*sd);  
+    const high=Math.max(q3+1.5*iqr, mean+3*sd);  
+    data.forEach((r,i)=>{  
+      const v=parseFloat(r[col]);  
+      if(!isNaN(v)&&(v<low||v>high)){  
+        if(!outliers[i]) outliers[i]={};  
+        outliers[i][col]=true;  
+      }  
+    });  
+  });  
+  
+  columnSelect.innerHTML=numericCols.map(c=>`<option value="${c}">${c}</option>`).join('');  
+  columnSelect.style.display=numericCols.length?'inline-block':'none';  
+  columnSelect.onchange=()=>{ currentSelectedIndicator=columnSelect.value; updateDashboard(); };  
+  currentSelectedIndicator=columnSelect.value||numericCols[0]||null;  
+  
+  updateDashboard();  
+  exportBtn.disabled=false;  
+  statusEl.textContent='Outliers detected using AI-hybrid method.';  
+});  
+  
+// ===== Dashboard Updates =====  
+function updateDashboard(){  
+  if(!currentSelectedIndicator) currentSelectedIndicator=numericCols[0]||null;  
+  renderKPI(currentSelectedIndicator);  
+  renderChart(currentSelectedIndicator);  
+  renderTable(currentSelectedIndicator);  
+}  
+  
+// ===== KPI =====  
+function renderKPI(selected){  
+  const total=data.length;  
+  let outCount=0;  
+  for(let i in outliers) if(outliers[i][selected]) outCount++;  
+  const cleanPct=total?((total-outCount)/total*100).toFixed(1):'0.0';  
+  kpiContainer.innerHTML=`  
+    <div class="kpi-card"><h3>Indicator</h3><p style="font-size:14px">${escapeHtml(selected||'—')}</p></div>  
+    <div class="kpi-card"><h3>Total Records</h3><p>${total}</p></div>  
+    <div id="kpiOutCard" class="kpi-card kpi-clickable" title="Click to view only outliers"><h3>Outliers</h3><p>${outCount}</p></div>  
+    <div class="kpi-card"><h3>Data Quality</h3><p>${cleanPct}% Clean</p></div>  
+  `;  
+  const outCard=document.getElementById('kpiOutCard');  
+  if(outCard) outCard.addEventListener('click',()=>openOutliersModal(selected));  
+}  
+  
+// ===== Chart =====  
+function renderChart(selected){  
+  const nums=data.map(r=>parseFloat(r[selected])).filter(v=>!isNaN(v)).sort((a,b)=>a-b);  
+  const buckets=10, labels=[], counts=Array(buckets).fill(0);  
+  if(nums.length){  
+    const min=nums[0], max=nums[nums.length-1], step=(max-min)/buckets||1;  
+    for(let i=0;i<buckets;i++){ const lo=min+i*step, hi=lo+step; labels.push(`${Math.round(lo)}-${Math.round(hi)}`); }  
+    nums.forEach(v=>{ let idx=Math.floor((v-min)/(step||1)); if(idx<0) idx=0; if(idx>=buckets) idx=buckets-1; counts[idx]++; });  
+  }  
+  if(chart) chart.destroy();  
+  const ctx=document.getElementById('outlierChart').getContext('2d');  
+  chart=new Chart(ctx,{type:'bar', data:{labels, datasets:[{label:'Count', data:counts, backgroundColor:'#60a5fa'}]},  
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }, title:{ display:true, text:`${selected} — Distribution (buckets)` } } }});  
+}  
+  
+// ===== Table =====  
+function renderTable(selected){  
+  const hfTitle=hfCol||'Health Facility';  
+  const rows=data.map((r,i)=>[ r[hfCol]||'N/A', r[selected], (outliers[i]&&outliers[i][selected])?'Yes':'No' ]);  
+  if($.fn.dataTable.isDataTable('#dataTable')) $('#dataTable').DataTable().destroy();  
+  document.getElementById('tableContainer').innerHTML=`<table id="dataTable" class="display" style="width:100%"></table>`;  
+  $('#dataTable').DataTable({ data:rows, columns:[ {title:hfTitle},{title:selected},{title:'Outlier'} ],  
+    createdRow:(row,dataArr)=>{ if(dataArr[2]==='Yes') $('td',row).eq(1).addClass('outlier'); }, pageLength:12, scrollX:true });  
+}  
+  
+// ===== Modal =====  
+function openOutliersModal(selected){  
+  const hfTitle=hfCol||'Health Facility';  
+  const monthTitle=monthCol||'Month';  
+  const outRows=[];  
+  for(let i=0;i<data.length;i++){  
+    if(outliers[i]&&outliers[i][selected]){  
+      outRows.push([ data[i][hfCol]||'N/A', monthCol?data[i][monthCol]:'N/A', data[i][selected], 'Yes' ]);  
+    }  
+  }  
+  modalIndicatorName.textContent=selected;  
+  modalSubtitle.textContent=`Showing ${outRows.length} outlier row(s) for indicator "${selected}".`;  
+  if($.fn.dataTable.isDataTable('#outliersOnlyTable')) $('#outliersOnlyTable').DataTable().destroy();  
+  $('#outliersOnlyTable').DataTable({  
+    data:outRows,  
+    columns:[ {title:hfTitle},{title:monthTitle},{title:selected},{title:'Outlier'} ],  
+    createdRow:(row,dataArr)=>{ if(dataArr[3]==='Yes') $('td',row).eq(2).addClass('outlier'); },  
+    pageLength:20, scrollX:true  
+  });  
+  downloadOutliersBtn.onclick=()=>downloadOutliersOnly(selected,outRows,hfTitle,monthTitle);  
+  outlierModalBackdrop.style.display='flex';  
+  outlierModalBackdrop.setAttribute('aria-hidden','false');  
+}  
+  
+closeModalBtn.addEventListener('click',closeOutlierModal);  
+outlierModalBackdrop.addEventListener('click',ev=>{ if(ev.target===outlierModalBackdrop) closeOutlierModal(); });  
+function closeOutlierModal(){  
+  outlierModalBackdrop.style.display='none';  
+  outlierModalBackdrop.setAttribute('aria-hidden','true');  
+  if($.fn.dataTable.isDataTable('#outliersOnlyTable')) $('#outliersOnlyTable').DataTable().destroy();  
+  document.getElementById('outliersOnlyTable').innerHTML='';  
+}  
+  
+// ===== Download Outliers Only =====  
+async function downloadOutliersOnly(selected, rows, hfTitle, monthTitle){  
+  if(!rows||rows.length===0){ alert('No outliers to download.'); return; }  
+  const wb=new ExcelJS.Workbook();  
+  const ws=wb.addWorksheet(selected+'_Outliers');  
+  ws.addRow([hfTitle, monthTitle, selected, 'Outlier']);  
+  rows.forEach(r=>{  
+    const row=ws.addRow(r);  
+    row.getCell(3).fill={type:'pattern', pattern:'solid', fgColor:{argb:'FFFFCCCC'}};  
+    row.getCell(3).font={color:{argb:'FF7B0F0F'}, bold:true};  
+  });  
+  ws.getRow(1).font={bold:true};  
+  const buf=await wb.xlsx.writeBuffer();  
+  const ts=new Date().toISOString().replace(/[:.]/g,'-');  
+  saveAs(new Blob([buf]), `${selected}_outliers_${ts}.xlsx`);  
+}  
+  
+// ===== Export Full Table =====  
+exportBtn.addEventListener('click',async ()=>{  
+  const selected=columnSelect.value;  
+  if(!selected){ alert('Select an indicator first.'); return; }  
+  const wb=new ExcelJS.Workbook();  
+  const ws=wb.addWorksheet(selected+'_AllRows');  
+  ws.addRow([hfCol||'Health Facility', monthCol||'Month', selected,'Outlier']);  
+  for(let i=0;i<data.length;i++){  
+    const hfName=hfCol?data[i][hfCol]:'N/A';  
+    const monthVal=monthCol?data[i][monthCol]:'N/A';  
+    const val=data[i][selected];  
+    const isOut=outliers[i]&&outliers[i][selected];  
+    const row=ws.addRow([hfName, monthVal, val, isOut?'Yes':'No']);  
+    if(isOut){ row.getCell(3).fill={type:'pattern', pattern:'solid', fgColor:{argb:'FFFFCCCC'}}; row.getCell(3).font={color:{argb:'FF7B0F0F'}, bold:true}; }  
+  }  
+  const buf=await wb.xlsx.writeBuffer();  
+  const ts=new Date().toISOString().replace(/[:.]/g,'-');  
+  saveAs(new Blob([buf]), `${selected}_allrows_${ts}.xlsx`);  
+  statusEl.textContent=`Exported ${selected} (all rows) with outliers highlighted.`;  
+});  
+  
+// ===== Utilities =====  
+function quantile(arr,q){ if(!arr||arr.length===0) return NaN; const pos=(arr.length-1)*q; const base=Math.floor(pos); const rest=pos-base; return arr[base+1]!==undefined?arr[base]+rest*(arr[base+1]-arr[base]):arr[base]; }  
+function escapeHtml(s){ if(s===null||s===undefined) return ''; return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }  
+</script>  </body>  
+</html>  I code ko mobile responsive bnakr do please
