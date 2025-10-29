@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>AI Smart Outlier Dashboard - Fixed Export</title>
+<title>AI Smart Outlier Dashboard - Final</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 
 <!-- Libraries -->
@@ -48,6 +48,22 @@ table.dataTable tbody td.outlier{background:var(--outlier-bg)!important; color:v
 #status{margin:6px 0 0; color:var(--muted); font-weight:600; font-size:13px;}
 .toast{position:fixed; bottom:20px; right:20px; background:var(--primary); color:white; padding:10px 14px; border-radius:8px; font-weight:600; opacity:0; transform:translateY(20px); transition:all .35s; z-index:5000;}
 .toast.show{opacity:1; transform:translateY(0);}
+
+/* Note box */
+.note-box{
+  background:#e6fffa;
+  border-left:6px solid var(--primary);
+  padding:12px 14px;
+  border-radius:10px;
+  margin-top:12px;
+  margin-bottom:16px;
+  color:#064e3b;
+  font-size:14px;
+  line-height:1.4;
+}
+.note-box strong{color:var(--primary-600);}
+
+/* Responsive */
 @media(max-width:720px){
   h1{text-align:center; font-size:1.1rem;}
   .brand-info{width:100%; justify-content:center;}
@@ -66,6 +82,11 @@ table.dataTable tbody td.outlier{background:var(--outlier-bg)!important; color:v
       <span style="color:var(--primary)">| Developed by IT-DPAs, DO Malir</span>
       <img src="https://pphisindh.org/home/img/blue/logo-wide.png" alt="logo">
     </div>
+  </div>
+
+  <!-- VISIBLE NOTE (user requested) -->
+  <div class="note-box">
+    📝 <strong>Note:</strong> Download file of <b>one year</b> or <b>6 month</b> from <b>JSI portal</b>, then delete the <b>1st row</b> (any title/empty row) of the Excel file before uploading. After upload click <b>Detect Outliers</b> to view results <b>indicator-wise</b>. You can open detailed report by clicking the <b>Outliers</b> number in the KPI card.
   </div>
 
   <div class="controls">
@@ -225,11 +246,8 @@ function renderKPI(selected) {
     <div class="kpi-card"><h3>Data Quality</h3><p>${cleanPct}% Clean</p></div>
   `;
   const card = document.getElementById('kpiOutCard');
-  if (selected !== '__ALL__') {
-    card.onclick = () => openOutliersModal(selected);
-  } else {
-    card.onclick = null;
-  }
+  // always attach click handler to show outliers (for single indicator or all)
+  card.onclick = () => openOutliersModal(selected);
 }
 
 /* Chart for single indicator or histogram */
@@ -309,21 +327,45 @@ function renderTable(selected) {
 function openOutliersModal(selected) {
   const hfTitle = hfCol || 'Health Facility', monthTitle = monthCol || 'Month';
   const outRows = [];
-  for (let i=0;i<data.length;i++){
-    if (outliers[i] && outliers[i][selected]) {
-      outRows.push([ data[i][hfCol] || 'N/A', monthCol ? data[i][monthCol] : 'N/A', data[i][selected], 'Yes' ]);
+
+  if (selected === '__ALL__') {
+    // show all rows that have any outlier, with flags column
+    for (let i=0;i<data.length;i++){
+      if (outliers[i] && Object.keys(outliers[i]).length){
+        const flags = Object.keys(outliers[i]).join(', ');
+        // also prepare a readable values string like "ind1:val, ind2:val"
+        const vals = Object.keys(outliers[i]).map(ind => `${ind}:${data[i][ind]}`).join(' | ');
+        outRows.push([ data[i][hfCol] || 'N/A', monthCol?data[i][monthCol]:'N/A', flags, vals ]);
+      }
     }
+    modalIndicatorName.textContent = 'All Indicators';
+    modalSubtitle.textContent = `${outRows.length} outlier records found across indicators.`;
+    if ($.fn.dataTable.isDataTable('#outliersOnlyTable')) $('#outliersOnlyTable').DataTable().destroy();
+    $('#outliersOnlyTable').DataTable({
+      data: outRows,
+      columns: [ { title: hfTitle }, { title: monthTitle }, { title: 'Outlier Indicators' }, { title: 'Indicator:Value' } ],
+      createdRow: (row,d) => { $('td',row).eq(2).addClass('outlier'); $('td',row).eq(3).css('font-size','12px'); },
+      pageLength:20,
+      scrollX:true
+    });
+  } else {
+    for (let i=0;i<data.length;i++){
+      if (outliers[i] && outliers[i][selected]) {
+        outRows.push([ data[i][hfCol] || 'N/A', monthCol ? data[i][monthCol] : 'N/A', data[i][selected], 'Yes' ]);
+      }
+    }
+    modalIndicatorName.textContent = selected;
+    modalSubtitle.textContent = `${outRows.length} outliers found.`;
+    if ($.fn.dataTable.isDataTable('#outliersOnlyTable')) $('#outliersOnlyTable').DataTable().destroy();
+    $('#outliersOnlyTable').DataTable({
+      data: outRows,
+      columns: [ { title: hfTitle }, { title: monthTitle }, { title: selected }, { title: 'Outlier' } ],
+      createdRow: (row,d) => { if (d[3] === 'Yes') $('td',row).eq(2).addClass('outlier'); },
+      pageLength:20,
+      scrollX:true
+    });
   }
-  modalIndicatorName.textContent = selected;
-  modalSubtitle.textContent = `${outRows.length} outliers found.`;
-  if ($.fn.dataTable.isDataTable('#outliersOnlyTable')) $('#outliersOnlyTable').DataTable().destroy();
-  $('#outliersOnlyTable').DataTable({
-    data: outRows,
-    columns: [ { title: hfTitle }, { title: monthTitle }, { title: selected }, { title: 'Outlier' } ],
-    createdRow: (row,d) => { if (d[3] === 'Yes') $('td',row).eq(2).addClass('outlier'); },
-    pageLength: 20,
-    scrollX:true
-  });
+
   downloadOutliersBtn.onclick = () => downloadOutliersOnly(selected, outRows, hfTitle, monthTitle);
   outlierModalBackdrop.style.display = 'flex';
 }
@@ -331,7 +373,6 @@ closeModalBtn.addEventListener('click', ()=> outlierModalBackdrop.style.display 
 outlierModalBackdrop.addEventListener('click', e => { if (e.target === outlierModalBackdrop) outlierModalBackdrop.style.display = 'none'; });
 
 /* ====== EXCEL Export helpers ====== */
-/* Styles: header fill = teal, outlier cell fill = light red, outlier font red bold; borders thin */
 function applyHeaderStyle(row) {
   row.font = { bold: true, color: { argb:'FFFFFFFF' } };
   row.alignment = { horizontal:'center', vertical:'middle' };
@@ -344,15 +385,12 @@ function applyOutlierCellStyle(cell) {
 function applyBorder(cell) {
   cell.border = { top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'} };
 }
-
-/* Auto-fit width: compute max length in column and set width */
 function autofitColumns(ws) {
   ws.columns.forEach(col => {
     let maxLen = 10;
     col.eachCell({ includeEmpty: true }, (cell) => {
       let v = cell.value;
       if (v === null || v === undefined) return;
-      // If object (RichText/formula), convert to string safely
       if (typeof v === 'object') {
         if (v.richText) v = v.richText.map(t=>t.text).join('');
         else if (v.text) v = v.text;
